@@ -1,0 +1,89 @@
+---
+title: "data processing"
+---
+
+#Libraries
+```{r setup, include=FALSE}
+library(here)
+library(tidyverse)
+library(janitor)
+library(sf)
+```
+
+#SIMD Data
+```{r}
+#summary SIMD data
+simd_zones <- 
+  read_csv(here(
+    "data",
+    "SIMD+2020v2+-+datazone+lookup.csv")) %>%
+  clean_names %>%
+  rename(dz_name = d_zname,
+         iz_name = i_zname,
+         iz_code = i_zcode,
+         la_name = l_aname) %>%
+  select(dz:simd2020_housing_domain_rank, 
+         iz_code, iz_name, la_name)
+
+#components of SIMD (removed access measures)
+simd_indicators <- 
+  read_csv(here(
+    "data", 
+    "SIMD2020v2_indicators.csv")) %>%
+  clean_names() %>%
+  select(data_zone, 
+         total_population:university,
+         broadband:nocentralheat_rate)
+```
+
+#Tidy SIMD
+```{r}
+#join SIMD files
+#remove "%" and "*" and make numeric
+#convert suppressed small values to zero
+
+simd <- 
+  full_join(simd_indicators, simd_zones, 
+            by = c("data_zone" = "dz")) %>%
+  relocate(dz_name, .after = data_zone) %>%
+  mutate(across(everything(), 
+                ~ str_remove_all(., "%")),
+         across(everything(), 
+                ~ str_replace_all(., "\\*", "0")),
+         across(total_population:simd2020_housing_domain_rank, 
+                ~ as.numeric(.)))
+
+#create percentiles for SIMD indicators
+#positive if a high score is bad
+#negative if a high score is good
+
+simd <-
+simd %>%
+  mutate(
+    simd_rank_scot =
+      ntile(-simd2020v2_rank, 100),
+    overcrowded_rank_scot =
+      ntile(overcrowded_rate, 100),
+    no_central_heat_rank_scot = 
+      ntile(nocentralheat_rate, 100),
+    emergency_rank_scot =
+      ntile(emerg, 100),
+    drug_rank_scot =
+      ntile(drug, 100),
+    neet_rank_scot =
+      ntile(not_participating, 100))
+```
+
+#Aberdeen
+```{r}
+#subset Aberdeen city
+aberdeen_data <-
+  simd %>%
+  filter(la_name == "Aberdeen City") 
+```
+
+#Write tidy data
+```{r}
+aberdeen_data %>%
+  write_csv("aberdeen.csv")
+```

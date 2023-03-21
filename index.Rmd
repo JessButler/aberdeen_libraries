@@ -1,0 +1,119 @@
+---
+title: "Aberdeen"
+
+output:
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll 
+    orientation: rows
+---
+
+```{r setup, include=FALSE}
+library(here)
+library(tidyverse)
+library(janitor)
+library(sf)
+library(flexdashboard)
+library(mapview)
+library(gt)
+library(RColorBrewer)
+```
+
+```{r}
+#Load data
+
+closed_libs <- read_csv("closed_libraries.csv")
+
+#SIMD and census data combined
+#This file was created using data_processing.Rmd
+aberdeen <-
+  read_csv("aberdeen.csv")
+
+#2011 census datazones for maps
+datazone_sf <- 
+  st_read(here(
+    "data", 
+    "sc_dz_11.shp"), quiet = T) %>%
+  clean_names()
+
+aberdeen_data_zones <-
+  pull(aberdeen, data_zone)
+
+#Aberdeen priority shapefile for maps
+aberdeen_sf <- 
+  filter(datazone_sf, 
+         data_zone %in%
+           aberdeen_data_zones) %>%
+  merge(., aberdeen, #add data
+        by = "data_zone") %>%
+  select(data_zone, name, iz_name, ends_with("scot"), geometry) 
+```
+
+Library Closures
+==============================================
+
+Row
+----------------------------------------------
+
+### 
+
+Aberdeen City Council is closing 6 of the city's 17 libraries. The northwest of the city is being disproportionately affected. Three of their four libraries are closing.
+
+The areas of the city losing their libraries are also severely affected by social and economic disadvantage.
+
+The Scottish Government measures complex poverty with a score called the [Scottish Index of Multiple Deprivation](https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/). 
+
+This map shows Aberdeen neighbourhoods with their deprivation score. The yellow areas are the neighbourhoods with the most disadvantage overall. 
+
+**Closing libraries are shown in red.**  
+
+Row
+----------------------------------------------
+
+### 
+
+```{r}
+#SIMD deprivation percentile
+closed_libraries <- st_as_sf(closed_libs, coords = c("long", "lat"))
+
+simd_map <- 
+  aberdeen_sf %>%
+  mapview(
+    map.types = "OpenStreetMap",
+    zcol = "simd_rank_scot",
+    label = "name",
+    layer.name = "Poverty",
+    color = "black", lwd = 1, 
+    alpha.regions = 0.75)
+
+libs_map <- 
+  closed_libraries %>%
+  mapview(map.types = "OpenStreetMap",
+          layer.name = "Closed Libraries",
+          label = "library_name",
+          color = "red",
+          col.regions = "red",
+          alpha.regions = 1)
+
+simd_map + libs_map
+```
+
+
+
+Sources
+==============================================
+
+Row
+----------------------------------------------
+### 
+Questions and comments very welcome! Email [Jess Butler](jessicabutler@abdn.ac.uk)  
+  
+All data and code for this analysis are available [here](https://github.com/JessButler/aberdeen_libraries)  
+
+[Scottish Index of Multiple Deprivation 2020 version 2 ranks table](https://www.gov.scot/publications/scottish-index-of-multiple-deprivation-2020v2-ranks/) was the source for  
+
+- area ID (Data_Zone) 
+- council area 
+- overall disadvantage score (percentile for SIMD2020v2_rank)
+
+[2011 Scotland Data Zones shapefiles](https://data.gov.uk/dataset/ab9f1f20-3b7f-4efa-9bd2-239acf63b540/data-zone-boundaries-2011) were used to draw area boundaries
+
