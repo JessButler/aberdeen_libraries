@@ -58,7 +58,9 @@ Row
 
 ### 
 
-Aberdeen City Council is closing 6 of the city's 17 libraries. The northwest of the city is being disproportionately affected. Three of their four libraries are closing.
+Aberdeen City Council is closing 6 of the city's 17 libraries.  
+
+The northwest of the city is being disproportionately affected. Three of their four libraries are closing.
 
 The areas of the city losing their libraries are also severely affected by social and economic disadvantage.
 
@@ -85,8 +87,9 @@ simd_map <-
     zcol = "simd_rank_scot",
     label = "name",
     layer.name = "Poverty",
+    #col.regions = rev(brewer.pal(100, name = "Spectral")),
     color = "black", lwd = 1, 
-    alpha.regions = 0.75)
+    alpha.regions = 0.95)
 
 closed_libs_map <- 
   closed_libraries %>%
