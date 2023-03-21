@@ -21,7 +21,9 @@ library(RColorBrewer)
 ```{r}
 #Load data
 
-closed_libs <- read_csv("closed_libraries.csv")
+libs <- read_csv("libraries.csv")
+closed_libs = filter(libs, status == "closed")
+open_libs = filter(libs, status == "open")
 
 #SIMD and census data combined
 #This file was created using data_processing.Rmd
@@ -74,6 +76,7 @@ Row
 ```{r}
 #SIMD deprivation percentile
 closed_libraries <- st_as_sf(closed_libs, coords = c("long", "lat"))
+open_libraries <- st_as_sf(open_libs, coords = c("long", "lat"))
 
 simd_map <- 
   aberdeen_sf %>%
@@ -85,16 +88,25 @@ simd_map <-
     color = "black", lwd = 1, 
     alpha.regions = 0.75)
 
-libs_map <- 
+closed_libs_map <- 
   closed_libraries %>%
   mapview(map.types = "OpenStreetMap",
           layer.name = "Closed Libraries",
           label = "library_name",
-          color = "red",
+          color = "black",
           col.regions = "red",
           alpha.regions = 1)
 
-simd_map + libs_map
+open_libs_map <- 
+  open_libraries %>%
+  mapview(map.types = "OpenStreetMap",
+          layer.name = "Open Libraries",
+          label = "library_name",
+          color = "black",
+          col.regions = "green",
+          alpha.regions = 1)
+
+simd_map + closed_libs_map + open_libs_map
 ```
 
 
